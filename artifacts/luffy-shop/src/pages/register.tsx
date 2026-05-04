@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
+import { playLoginSound } from "@/lib/sound";
 import { Loader2, Lock, Mail, User } from "lucide-react";
 
 const registerSchema = z.object({
@@ -36,6 +37,7 @@ export default function RegisterPage() {
           id: number; userId: string; email: string; username: string;
           balance: number; isAdmin: boolean; lastLoginAt: string | null; createdAt: string;
         };
+        playLoginSound();
         setUser(user);
         setLocation("/dashboard");
         toast({ title: "Welcome to LUFFY XO.SHOP!", description: `Your ID: ${user.userId}` });

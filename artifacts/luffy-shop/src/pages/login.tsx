@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { CoinIcon } from "@/components/CoinIcon";
+import { playLoginSound } from "@/lib/sound";
 import { Loader2, Lock, Mail } from "lucide-react";
 
 const loginSchema = z.object({
@@ -36,6 +37,7 @@ export default function LoginPage() {
           id: number; userId: string; email: string; username: string;
           balance: number; isAdmin: boolean; lastLoginAt: string | null; createdAt: string;
         };
+        playLoginSound();
         setUser(user);
         if (user.isAdmin) {
           setLocation("/admin");
