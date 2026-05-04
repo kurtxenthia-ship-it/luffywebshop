@@ -3,20 +3,32 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: LUFFY XO.SHOP API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: users
+    description: User management
+  - name: balance
+    description: Balance and coins operations
+  - name: generator
+    description: TXT Generator operations
+  - name: codm
+    description: CODM Account Generator operations
+  - name: admin
+    description: Admin dashboard operations
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +36,369 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterBody"
+      responses:
+        "201":
+          description: Registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBody"
+      responses:
+        "200":
+          description: Logged in successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: List all users (admin only)
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+
+  /users/{id}:
+    get:
+      operationId: getUser
+      tags: [users]
+      summary: Get user by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /users/{id}/balance:
+    patch:
+      operationId: updateUserBalance
+      tags: [users]
+      summary: Update user balance (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateBalanceBody"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /balance/transactions:
+    get:
+      operationId: listTransactions
+      tags: [balance]
+      summary: List transactions for current user
+      responses:
+        "200":
+          description: List of transactions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Transaction"
+
+  /balance/topup:
+    post:
+      operationId: requestTopup
+      tags: [balance]
+      summary: Request a GCash top-up
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TopupBody"
+      responses:
+        "201":
+          description: Topup request created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+
+  /balance/topup/{id}/approve:
+    post:
+      operationId: approveTopup
+      tags: [balance]
+      summary: Approve a top-up request (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Approved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+
+  /generator/files:
+    get:
+      operationId: listTxtFiles
+      tags: [generator]
+      summary: List available TXT generator files (admin view)
+      responses:
+        "200":
+          description: List of TXT files
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TxtFile"
+
+    post:
+      operationId: uploadTxtFile
+      tags: [generator]
+      summary: Upload a TXT file for generation (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UploadTxtFileBody"
+      responses:
+        "201":
+          description: File uploaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TxtFile"
+
+  /generator/generate:
+    post:
+      operationId: generateTxt
+      tags: [generator]
+      summary: Generate TXT lines (costs coins)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateTxtBody"
+      responses:
+        "200":
+          description: Generated lines
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateTxtResponse"
+        "402":
+          description: Insufficient coins
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /generator/history:
+    get:
+      operationId: listGenerationHistory
+      tags: [generator]
+      summary: List generation history for current user
+      responses:
+        "200":
+          description: Generation history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GenerationHistory"
+
+  /codm/generate:
+    post:
+      operationId: generateCodmAccount
+      tags: [codm]
+      summary: Generate a CODM account (costs coins)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateCodmBody"
+      responses:
+        "200":
+          description: Generated CODM account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CodmAccount"
+        "402":
+          description: Insufficient coins
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /codm/accounts:
+    get:
+      operationId: listCodmAccounts
+      tags: [codm]
+      summary: List CODM accounts generated by current user
+      responses:
+        "200":
+          description: List of CODM accounts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CodmAccount"
+
+  /admin/stats:
+    get:
+      operationId: getAdminStats
+      tags: [admin]
+      summary: Get admin dashboard stats
+      responses:
+        "200":
+          description: Admin statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStats"
+
+  /admin/recent-logins:
+    get:
+      operationId: getRecentLogins
+      tags: [admin]
+      summary: Get recent user logins
+      responses:
+        "200":
+          description: Recent logins
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LoginEvent"
+
+  /admin/pending-topups:
+    get:
+      operationId: listPendingTopups
+      tags: [admin]
+      summary: List all pending topup requests
+      responses:
+        "200":
+          description: Pending topups
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Transaction"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +409,283 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+      required:
+        - success
+
+    RegisterBody:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+        username:
+          type: string
+      required:
+        - email
+        - password
+        - username
+
+    LoginBody:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      required:
+        - email
+        - password
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        token:
+          type: string
+      required:
+        - user
+        - token
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        email:
+          type: string
+        username:
+          type: string
+        balance:
+          type: integer
+        isAdmin:
+          type: boolean
+        lastLoginAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - userId
+        - email
+        - username
+        - balance
+        - isAdmin
+        - lastLoginAt
+        - createdAt
+
+    UpdateBalanceBody:
+      type: object
+      properties:
+        balance:
+          type: integer
+      required:
+        - balance
+
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        type:
+          type: string
+        amount:
+          type: integer
+        status:
+          type: string
+        reference:
+          type: ["string", "null"]
+        note:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        user:
+          $ref: "#/components/schemas/User"
+      required:
+        - id
+        - userId
+        - type
+        - amount
+        - status
+        - reference
+        - note
+        - createdAt
+        - user
+
+    TopupBody:
+      type: object
+      properties:
+        amount:
+          type: integer
+        reference:
+          type: string
+      required:
+        - amount
+        - reference
+
+    TxtFile:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        totalLines:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - totalLines
+        - createdAt
+
+    UploadTxtFileBody:
+      type: object
+      properties:
+        name:
+          type: string
+        content:
+          type: string
+      required:
+        - name
+        - content
+
+    GenerateTxtBody:
+      type: object
+      properties:
+        fileId:
+          type: integer
+        lineCount:
+          type: integer
+      required:
+        - fileId
+        - lineCount
+
+    GenerateTxtResponse:
+      type: object
+      properties:
+        lines:
+          type: array
+          items:
+            type: string
+        coinsSpent:
+          type: integer
+        remainingBalance:
+          type: integer
+      required:
+        - lines
+        - coinsSpent
+        - remainingBalance
+
+    GenerationHistory:
+      type: object
+      properties:
+        id:
+          type: integer
+        fileId:
+          type: integer
+        fileName:
+          type: string
+        lineCount:
+          type: integer
+        coinsSpent:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - fileId
+        - fileName
+        - lineCount
+        - coinsSpent
+        - createdAt
+
+    GenerateCodmBody:
+      type: object
+      properties:
+        count:
+          type: integer
+      required:
+        - count
+
+    CodmAccount:
+      type: object
+      properties:
+        id:
+          type: integer
+        account:
+          type: string
+        status:
+          type: string
+        coinsSpent:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - account
+        - status
+        - coinsSpent
+        - createdAt
+
+    AdminStats:
+      type: object
+      properties:
+        totalUsers:
+          type: integer
+        totalCoinsDistributed:
+          type: integer
+        totalGenerations:
+          type: integer
+        pendingTopups:
+          type: integer
+        totalRevenue:
+          type: integer
+        totalCodmGenerated:
+          type: integer
+      required:
+        - totalUsers
+        - totalCoinsDistributed
+        - totalGenerations
+        - pendingTopups
+        - totalRevenue
+        - totalCodmGenerated
+
+    LoginEvent:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        username:
+          type: string
+        email:
+          type: string
+        loginAt:
+          type: string
+      required:
+        - id
+        - userId
+        - username
+        - email
+        - loginAt

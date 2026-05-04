@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "LUFFY XO.SHOP"
+version = "1.0.0"
+id = "artifacts/luffy-shop"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23967
+
+[services.development]
+run = "pnpm --filter @workspace/luffy-shop run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/luffy-shop", "run", "build" ]
+publicDir = "artifacts/luffy-shop/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23967"
+BASE_PATH = "/"
