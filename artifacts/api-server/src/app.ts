@@ -3,6 +3,8 @@ import cors from "cors";
 import pinoHttp from "pino-http";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { pool } from "@workspace/db";
@@ -59,5 +61,18 @@ app.use(
 );
 
 app.use("/api", router);
+
+// Serve the built frontend static files in production
+if (process.env["NODE_ENV"] === "production") {
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  const frontendDist = path.resolve(__dirname, "../../luffy-shop/dist/public");
+
+  app.use(express.static(frontendDist));
+
+  // For any non-API route, serve the React app's index.html (SPA fallback)
+  app.get("*", (_req, res) => {
+    res.sendFile(path.join(frontendDist, "index.html"));
+  });
+}
 
 export default app;
