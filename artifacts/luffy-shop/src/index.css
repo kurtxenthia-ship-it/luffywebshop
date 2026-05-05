@@ -67,61 +67,82 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* DARK RED THEME */
+/* REDDISH-BLUE ULTRA PRO DARK THEME */
 :root {
-  --button-outline: rgba(255,255,255, .10);
+  --button-outline: rgba(255,255,255, .08);
   --badge-outline: rgba(255,255,255, .05);
   --opaque-button-border-intensity: -8;
   --elevate-1: rgba(255,255,255, .04);
-  --elevate-2: rgba(255,255,255, .09);
+  --elevate-2: rgba(255,255,255, .08);
 
-  --background: 0 0% 5%;
-  --foreground: 0 0% 95%;
-  --border: 0 40% 15%;
-  --card: 0 0% 8%;
-  --card-foreground: 0 0% 95%;
-  --card-border: 0 35% 18%;
-  --sidebar: 0 0% 6%;
-  --sidebar-foreground: 0 0% 90%;
-  --sidebar-border: 0 35% 15%;
-  --sidebar-primary: 0 85% 45%;
+  /* Deep blue-dark background */
+  --background: 222 18% 4%;
+  --foreground: 210 20% 96%;
+
+  /* Blue-tinted borders */
+  --border: 218 22% 12%;
+
+  /* Blue-dark cards */
+  --card: 220 16% 7%;
+  --card-foreground: 210 18% 95%;
+  --card-border: 218 20% 14%;
+
+  /* Sidebar */
+  --sidebar: 224 20% 5%;
+  --sidebar-foreground: 210 15% 90%;
+  --sidebar-border: 218 18% 11%;
+  --sidebar-primary: 0 85% 50%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 0 50% 12%;
-  --sidebar-accent-foreground: 0 0% 90%;
-  --sidebar-ring: 0 85% 45%;
-  --popover: 0 0% 8%;
-  --popover-foreground: 0 0% 95%;
-  --popover-border: 0 35% 18%;
-  --primary: 0 85% 45%;
+  --sidebar-accent: 218 28% 13%;
+  --sidebar-accent-foreground: 210 15% 90%;
+  --sidebar-ring: 0 85% 50%;
+
+  /* Popover */
+  --popover: 220 16% 8%;
+  --popover-foreground: 210 18% 95%;
+  --popover-border: 218 20% 15%;
+
+  /* Red primary accent */
+  --primary: 0 85% 50%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 0 30% 12%;
-  --secondary-foreground: 0 0% 85%;
-  --muted: 0 15% 10%;
-  --muted-foreground: 0 10% 55%;
-  --accent: 0 60% 20%;
-  --accent-foreground: 0 0% 95%;
+
+  /* Blue-dark secondary */
+  --secondary: 218 35% 13%;
+  --secondary-foreground: 210 15% 86%;
+
+  --muted: 218 18% 10%;
+  --muted-foreground: 215 12% 52%;
+
+  /* Blue accent */
+  --accent: 215 45% 17%;
+  --accent-foreground: 210 20% 96%;
+
   --destructive: 0 85% 45%;
   --destructive-foreground: 0 0% 100%;
-  --input: 0 30% 18%;
-  --ring: 0 85% 45%;
-  --chart-1: 0 85% 45%;
-  --chart-2: 0 60% 55%;
-  --chart-3: 20 80% 50%;
-  --chart-4: 0 40% 35%;
-  --chart-5: 0 20% 70%;
+
+  --input: 218 22% 14%;
+  --ring: 0 85% 50%;
+
+  --chart-1: 0 85% 50%;
+  --chart-2: 215 80% 55%;
+  --chart-3: 30 80% 50%;
+  --chart-4: 270 70% 55%;
+  --chart-5: 150 65% 45%;
 
   --app-font-sans: 'Inter', sans-serif;
   --app-font-serif: Georgia, serif;
   --app-font-mono: 'Courier New', monospace;
   --radius: .5rem;
-  --shadow-2xs: 0px 1px 2px 0px rgba(0,0,0, 0.6);
-  --shadow-xs: 0px 1px 4px 0px rgba(0,0,0, 0.6);
-  --shadow-sm: 0px 2px 8px 0px rgba(0,0,0, 0.5), 0px 1px 2px -1px rgba(0,0,0,0.4);
-  --shadow: 0px 4px 12px 0px rgba(0,0,0, 0.5);
-  --shadow-md: 0px 4px 16px 0px rgba(0,0,0, 0.6);
-  --shadow-lg: 0px 8px 24px 0px rgba(0,0,0, 0.7);
-  --shadow-xl: 0px 16px 40px 0px rgba(0,0,0, 0.8);
+
+  --shadow-2xs: 0px 1px 2px 0px rgba(0,0,0, 0.7);
+  --shadow-xs: 0px 1px 4px 0px rgba(0,0,0, 0.7);
+  --shadow-sm: 0px 2px 8px 0px rgba(0,0,0, 0.6), 0px 1px 2px -1px rgba(0,0,0,0.5);
+  --shadow: 0px 4px 12px 0px rgba(0,0,0, 0.6);
+  --shadow-md: 0px 4px 16px 0px rgba(0,0,0, 0.7);
+  --shadow-lg: 0px 8px 24px 0px rgba(0,0,0, 0.8);
+  --shadow-xl: 0px 16px 40px 0px rgba(0,0,0, 0.85);
   --shadow-2xl: 0px 24px 64px 0px rgba(0,0,0, 0.9);
+
   --tracking-normal: 0em;
   --spacing: 0.25rem;
 
@@ -159,6 +180,33 @@
     color: hsl(var(--muted-foreground));
     pointer-events: none;
   }
+
+  .glow-red {
+    box-shadow: 0 0 20px rgba(220, 38, 38, 0.3), 0 0 40px rgba(220, 38, 38, 0.1);
+  }
+  .glow-blue {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.25), 0 0 40px rgba(59, 130, 246, 0.08);
+  }
+  .text-gradient {
+    background: linear-gradient(135deg, hsl(0, 85%, 60%) 0%, hsl(215, 85%, 62%) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .card-gradient-border {
+    border-color: transparent;
+    background-clip: padding-box;
+    position: relative;
+  }
+  .card-gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    background: linear-gradient(135deg, rgba(220,38,38,0.3) 0%, rgba(59,130,246,0.3) 100%);
+    z-index: -1;
+  }
+
   .no-default-hover-elevate {}
   .no-default-active-elevate {}
   .toggle-elevate::before,
