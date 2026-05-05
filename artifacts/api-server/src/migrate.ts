@@ -15,10 +15,13 @@ export async function runMigrations() {
         password_hash TEXT NOT NULL,
         balance INTEGER NOT NULL DEFAULT 0,
         is_admin BOOLEAN NOT NULL DEFAULT FALSE,
+        is_banned BOOLEAN NOT NULL DEFAULT FALSE,
         last_login_at TIMESTAMPTZ,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
+
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS is_banned BOOLEAN NOT NULL DEFAULT FALSE;
 
       CREATE TABLE IF NOT EXISTS transactions (
         id SERIAL PRIMARY KEY,
@@ -57,11 +60,41 @@ export async function runMigrations() {
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
 
+      CREATE TABLE IF NOT EXISTS codm_account_pool (
+        id SERIAL PRIMARY KEY,
+        raw_text TEXT NOT NULL,
+        username TEXT NOT NULL,
+        password TEXT NOT NULL,
+        nickname TEXT,
+        uid TEXT,
+        level INTEGER,
+        region TEXT,
+        account_status TEXT NOT NULL DEFAULT 'unknown',
+        is_claimed BOOLEAN NOT NULL DEFAULT FALSE,
+        claimed_by_user_id INTEGER REFERENCES users(id),
+        claimed_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS site_config (
+        id SERIAL PRIMARY KEY,
+        key TEXT NOT NULL UNIQUE,
+        value TEXT NOT NULL,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
       CREATE TABLE IF NOT EXISTS login_events (
         id SERIAL PRIMARY KEY,
         user_id INTEGER NOT NULL REFERENCES users(id),
         login_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
+    `);
+
+    await client.query(`
+      INSERT INTO site_config (key, value) VALUES
+        ('generator_pricing', '{"1000":10,"2000":20,"3000":30,"4000":40,"5000":50}'),
+        ('codm_pricing', '{"1":50,"2":80,"3":120}')
+      ON CONFLICT (key) DO NOTHING;
     `);
 
     logger.info("Migrations complete.");
