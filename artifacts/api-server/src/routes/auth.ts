@@ -22,7 +22,7 @@ function generateUserId(): string {
   return result;
 }
 
-function formatUser(user: typeof usersTable.$inferSelect) {
+export function formatUser(user: typeof usersTable.$inferSelect) {
   return {
     id: user.id,
     userId: user.userId,
@@ -30,6 +30,7 @@ function formatUser(user: typeof usersTable.$inferSelect) {
     username: user.username,
     balance: user.balance,
     isAdmin: user.isAdmin,
+    isBanned: user.isBanned,
     lastLoginAt: user.lastLoginAt?.toISOString() ?? null,
     createdAt: user.createdAt.toISOString(),
   };
@@ -61,6 +62,7 @@ router.post("/auth/register", async (req, res): Promise<void> => {
       userId,
       balance: 0,
       isAdmin: false,
+      isBanned: false,
     }).returning();
 
     req.session.userId = user.id;
@@ -99,12 +101,15 @@ router.post("/auth/login", async (req, res): Promise<void> => {
       return;
     }
 
-    await db.update(usersTable).set({ lastLoginAt: new Date() }).where(eq(usersTable.id, user.id));
+    if (user.isBanned) {
+      res.status(403).json({ error: "Your account has been banned. Contact support." });
+      return;
+    }
 
+    await db.update(usersTable).set({ lastLoginAt: new Date() }).where(eq(usersTable.id, user.id));
     await db.insert(loginEventsTable).values({ userId: user.id });
 
     req.session.userId = user.id;
-
     req.log.info({ userId: user.id }, "User logged in");
 
     const updatedUser = { ...user, lastLoginAt: new Date() };
@@ -141,6 +146,12 @@ router.get("/auth/me", async (req, res): Promise<void> => {
       return;
     }
 
+    if (user.isBanned) {
+      req.session.destroy(() => {});
+      res.status(403).json({ error: "Your account has been banned." });
+      return;
+    }
+
     res.json(formatUser(user));
   } catch (err) {
     logger.error({ err }, "Auth me error");
@@ -148,5 +159,4 @@ router.get("/auth/me", async (req, res): Promise<void> => {
   }
 });
 
-export { formatUser };
 export default router;
