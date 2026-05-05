@@ -1,215 +1,103 @@
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Layout } from "@/components/Layout";
-import { CoinIcon } from "@/components/CoinIcon";
-import { useAuth } from "@/contexts/AuthContext";
-import { useRequestTopup, useListTransactions, getListTransactionsQueryKey } from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useToast } from "@/hooks/use-toast";
-import { CreditCard, Loader2, Send, Clock, CheckCircle2 } from "lucide-react";
+import { ExternalLink, MessageCircle, Code2, ShoppingBag } from "lucide-react";
 
-const topupSchema = z.object({
-  amount: z.coerce.number().min(50, "Minimum topup is 50 coins"),
-  reference: z.string().min(4, "Enter valid GCash reference number"),
-});
-
-type TopupForm = z.infer<typeof topupSchema>;
-
-const GCASH_NUMBER = "0917-XXX-XXXX"; // Placeholder
-
-export default function TopupPage() {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const topupMutation = useRequestTopup();
-
-  const { data: transactions } = useListTransactions({
-    query: { queryKey: getListTransactionsQueryKey() },
-  });
-
-  const topups = (transactions as Array<{ id: number; type: string; amount: number; status: string; reference: string | null; note: string | null; createdAt: string }> | undefined)
-    ?.filter(tx => tx.type === "topup") ?? [];
-
-  const form = useForm<TopupForm>({
-    resolver: zodResolver(topupSchema),
-    defaultValues: { amount: 50, reference: "" },
-  });
-
-  const onSubmit = (data: TopupForm) => {
-    topupMutation.mutate({ data }, {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getListTransactionsQueryKey() });
-        form.reset();
-        toast({
-          title: "Request submitted!",
-          description: "Admin will review and approve your topup shortly.",
-        });
-      },
-      onError: () => {
-        toast({ title: "Failed", description: "Could not submit topup request.", variant: "destructive" });
-      },
-    });
-  };
-
+export default function AboutPage() {
   return (
     <Layout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-black tracking-tight">Add Balance</h1>
-            <p className="text-muted-foreground text-sm mt-1">Top up your coin balance via GCash</p>
+      <div className="space-y-6 max-w-2xl mx-auto">
+        {/* Header */}
+        <div className="text-center">
+          <h1 className="text-3xl font-black tracking-tight mb-2">
+            <span style={{ background: "linear-gradient(135deg, hsl(0,85%,62%) 0%, hsl(215,85%,65%) 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+              About
+            </span>
+          </h1>
+          <p className="text-muted-foreground text-sm">The people behind LUFFY XO.SHOP</p>
+        </div>
+
+        {/* Seller card */}
+        <div className="rounded-2xl border overflow-hidden transition-all hover:scale-[1.01]"
+          style={{ borderColor: "rgba(220,38,38,0.3)", background: "linear-gradient(135deg, rgba(220,38,38,0.08) 0%, rgba(220,38,38,0.03) 100%)", boxShadow: "0 0 30px rgba(220,38,38,0.08)" }}>
+          <div className="px-6 py-4 border-b flex items-center gap-3" style={{ borderColor: "rgba(220,38,38,0.2)" }}>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: "linear-gradient(135deg, hsl(0,85%,50%) 0%, hsl(0,85%,38%) 100%)", boxShadow: "0 0 16px rgba(220,38,38,0.4)" }}>
+              <ShoppingBag size={18} className="text-white" />
+            </div>
+            <div>
+              <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Seller / Owner</div>
+              <div className="text-base font-black text-foreground">LUFFY XO</div>
+            </div>
           </div>
-          <div className="flex items-center gap-2 bg-card border border-border rounded-xl px-4 py-2">
-            <CoinIcon size={18} />
-            <span className="font-bold text-sm">{user?.balance ?? 0}</span>
-            <span className="text-xs text-muted-foreground">coins</span>
+          <div className="p-6 space-y-4">
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Contact the seller for coin top-ups, account inquiries, custom requests, and support. 
+              All purchases and transactions are handled through the official Telegram.
+            </p>
+            <a
+              href="https://t.me/LUFFYVIPONE"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-between p-4 rounded-xl border transition-all hover:scale-[1.01] group"
+              style={{ borderColor: "rgba(220,38,38,0.3)", background: "rgba(220,38,38,0.06)" }}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: "rgba(220,38,38,0.2)" }}>
+                  <MessageCircle size={16} className="text-primary" />
+                </div>
+                <div>
+                  <div className="text-sm font-bold">@LUFFYVIPONE</div>
+                  <div className="text-xs text-muted-foreground">Telegram</div>
+                </div>
+              </div>
+              <ExternalLink size={14} className="text-muted-foreground group-hover:text-primary transition-colors" />
+            </a>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Instructions + form */}
-          <div className="space-y-4">
-            {/* GCash instructions */}
-            <div className="bg-card border border-border rounded-xl p-5">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
-                <Send size={14} />
-                Payment Instructions
-              </h3>
-              <div className="space-y-3">
-                {[
-                  { step: "1", text: `Send GCash to ${GCASH_NUMBER}` },
-                  { step: "2", text: "Enter the amount you sent" },
-                  { step: "3", text: "Enter your GCash reference number" },
-                  { step: "4", text: "Submit and wait for admin approval" },
-                ].map(({ step, text }) => (
-                  <div key={step} className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
-                      {step}
-                    </div>
-                    <p className="text-sm text-muted-foreground pt-0.5">{text}</p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-4 bg-primary/10 border border-primary/20 rounded-lg p-3">
-                <p className="text-xs text-muted-foreground font-semibold">GCash Number</p>
-                <p className="text-lg font-mono font-black text-primary mt-1">{GCASH_NUMBER}</p>
-                <p className="text-xs text-muted-foreground mt-1">1 PHP = 1 coin (minimum 50 coins)</p>
-              </div>
+        {/* Developer card */}
+        <div className="rounded-2xl border overflow-hidden transition-all hover:scale-[1.01]"
+          style={{ borderColor: "rgba(59,130,246,0.3)", background: "linear-gradient(135deg, rgba(59,130,246,0.08) 0%, rgba(59,130,246,0.03) 100%)", boxShadow: "0 0 30px rgba(59,130,246,0.08)" }}>
+          <div className="px-6 py-4 border-b flex items-center gap-3" style={{ borderColor: "rgba(59,130,246,0.2)" }}>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: "linear-gradient(135deg, hsl(215,85%,55%) 0%, hsl(215,85%,42%) 100%)", boxShadow: "0 0 16px rgba(59,130,246,0.4)" }}>
+              <Code2 size={18} className="text-white" />
             </div>
-
-            {/* Form */}
-            <div className="bg-card border border-border rounded-xl p-5">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
-                <CreditCard size={14} />
-                Submit Request
-              </h3>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="amount"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Amount (coins)</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            type="number"
-                            min={50}
-                            className="bg-secondary/50 h-10 text-sm"
-                            data-testid="input-topup-amount"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="reference"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">GCash Reference Number</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            placeholder="e.g. 1234567890"
-                            className="bg-secondary/50 h-10 text-sm font-mono"
-                            data-testid="input-topup-reference"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button
-                    type="submit"
-                    className="w-full h-11 font-bold bg-primary hover:bg-primary/90 shadow-lg shadow-primary/30"
-                    disabled={topupMutation.isPending}
-                    data-testid="button-submit-topup"
-                  >
-                    {topupMutation.isPending ? (
-                      <><Loader2 size={14} className="animate-spin mr-2" />Submitting...</>
-                    ) : (
-                      <><Send size={14} className="mr-2" />Submit Request</>
-                    )}
-                  </Button>
-                </form>
-              </Form>
+            <div>
+              <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Website Developer</div>
+              <div className="text-base font-black text-foreground">cozybalenciaga</div>
             </div>
           </div>
-
-          {/* Topup history */}
-          <div className="bg-card border border-border rounded-xl p-5">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
-              <Clock size={14} />
-              Topup History
-            </h3>
-            {topups.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                <CreditCard size={32} className="mb-2 opacity-20" />
-                <p className="text-sm">No topup requests yet</p>
+          <div className="p-6 space-y-4">
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              The developer behind the LUFFY XO.SHOP platform. For website-related inquiries, 
+              bug reports, or custom development work, reach out on Telegram.
+            </p>
+            <a
+              href="https://t.me/cozybalenciaga"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-between p-4 rounded-xl border transition-all hover:scale-[1.01] group"
+              style={{ borderColor: "rgba(59,130,246,0.3)", background: "rgba(59,130,246,0.06)" }}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: "rgba(59,130,246,0.2)" }}>
+                  <MessageCircle size={16} style={{ color: "hsl(215,85%,62%)" }} />
+                </div>
+                <div>
+                  <div className="text-sm font-bold">@cozybalenciaga</div>
+                  <div className="text-xs text-muted-foreground">Telegram</div>
+                </div>
               </div>
-            ) : (
-              <div className="space-y-2">
-                {topups.map((tx) => (
-                  <div
-                    key={tx.id}
-                    className="bg-secondary/20 rounded-lg p-3 border border-border/50"
-                    data-testid={`topup-item-${tx.id}`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <CoinIcon size={16} />
-                        <span className="text-sm font-bold">{tx.amount} coins</span>
-                      </div>
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                        tx.status === "approved"
-                          ? "bg-green-500/15 text-green-500"
-                          : tx.status === "pending"
-                          ? "bg-yellow-500/15 text-yellow-500"
-                          : "bg-red-500/15 text-red-500"
-                      }`}>
-                        {tx.status === "approved" && <CheckCircle2 size={10} className="inline mr-1" />}
-                        {tx.status}
-                      </span>
-                    </div>
-                    {tx.reference && (
-                      <p className="text-xs text-muted-foreground font-mono mt-1">Ref: {tx.reference}</p>
-                    )}
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {new Date(tx.createdAt).toLocaleDateString("en-PH", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
+              <ExternalLink size={14} className="text-muted-foreground group-hover:text-primary transition-colors" />
+            </a>
           </div>
+        </div>
+
+        {/* Footer note */}
+        <div className="text-center py-4">
+          <p className="text-xs text-muted-foreground/50">
+            LUFFY XO.SHOP — Powered by coins. Built with care.
+          </p>
         </div>
       </div>
     </Layout>
