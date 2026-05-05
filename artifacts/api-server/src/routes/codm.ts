@@ -1,43 +1,70 @@
 import { Router, type IRouter, type Request } from "express";
-import { db, codmAccountsTable, transactionsTable, usersTable } from "@workspace/db";
-import { eq, desc } from "drizzle-orm";
-import { GenerateCodmAccountBody } from "@workspace/api-zod";
+import { db, codmAccountsTable, codmAccountPoolTable, transactionsTable, usersTable, siteConfigTable } from "@workspace/db";
+import { eq, desc, and } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
 
 const router: IRouter = Router();
 
 type UserRequest = Request & { user: typeof usersTable.$inferSelect };
 
-const COINS_PER_ACCOUNT = 10;
+const DEFAULT_CODM_PRICING: Record<number, number> = {
+  1: 50,
+  2: 80,
+  3: 120,
+};
 
-function generateRandomAccount(): { account: string; status: string } {
-  const usernames = ["player", "gamer", "ninja", "sniper", "beast", "ghost", "shadow", "storm"];
-  const username = usernames[Math.floor(Math.random() * usernames.length)];
-  const num = Math.floor(Math.random() * 99999);
-  const pass = Math.random().toString(36).substring(2, 10) + Math.floor(Math.random() * 999);
-  const statuses = ["working", "working", "working", "not_working"];
-  const status = statuses[Math.floor(Math.random() * statuses.length)];
-  return {
-    account: `${username}${num}:${pass}`,
-    status,
-  };
+async function getCodmPricing(): Promise<Record<number, number>> {
+  try {
+    const [config] = await db.select().from(siteConfigTable).where(eq(siteConfigTable.key, "codm_pricing"));
+    if (config) return JSON.parse(config.value) as Record<number, number>;
+  } catch {}
+  return DEFAULT_CODM_PRICING;
 }
 
-router.post("/codm/generate", requireAuth, async (req: Request, res): Promise<void> => {
+router.post("/codm/claim", requireAuth, async (req: Request, res): Promise<void> => {
   const user = (req as UserRequest).user;
+  const { packageSize } = req.body as { packageSize: unknown };
 
-  const body = GenerateCodmAccountBody.safeParse(req.body);
-  if (!body.success) {
-    res.status(400).json({ error: body.error.message });
+  const size = Number(packageSize);
+  if (![1, 2, 3].includes(size)) {
+    res.status(400).json({ error: "Invalid package. Choose 1, 2, or 3 accounts." });
     return;
   }
 
-  const count = Math.max(1, Math.min(10, body.data.count));
-  const coinsRequired = count * COINS_PER_ACCOUNT;
+  const pricing = await getCodmPricing();
+  const coinsRequired = pricing[size];
+
+  if (!coinsRequired) {
+    res.status(400).json({ error: "Pricing not configured." });
+    return;
+  }
 
   if (user.balance < coinsRequired) {
-    res.status(402).json({ error: `Insufficient coins. Need ${coinsRequired} coins but you have ${user.balance}.` });
+    res.status(402).json({ error: `Insufficient coins. Need ${coinsRequired} but you have ${user.balance}.` });
     return;
+  }
+
+  const available = await db
+    .select()
+    .from(codmAccountPoolTable)
+    .where(eq(codmAccountPoolTable.isClaimed, false))
+    .limit(size);
+
+  if (available.length < size) {
+    res.status(503).json({
+      error: `Not enough accounts available in pool. Only ${available.length} available. Please contact the seller.`,
+    });
+    return;
+  }
+
+  const now = new Date();
+
+  for (const acc of available) {
+    await db.update(codmAccountPoolTable).set({
+      isClaimed: true,
+      claimedByUserId: user.id,
+      claimedAt: now,
+    }).where(eq(codmAccountPoolTable.id, acc.id));
   }
 
   await db.update(usersTable).set({ balance: user.balance - coinsRequired }).where(eq(usersTable.id, user.id));
@@ -47,24 +74,38 @@ router.post("/codm/generate", requireAuth, async (req: Request, res): Promise<vo
     type: "spend",
     amount: coinsRequired,
     status: "approved",
-    note: `Generated ${count} CODM account(s)`,
+    note: `Claimed ${size} CODM account(s)`,
   });
 
-  const generated = generateRandomAccount();
-
-  const [inserted] = await db.insert(codmAccountsTable).values({
-    userId: user.id,
-    account: generated.account,
-    status: generated.status,
-    coinsSpent: coinsRequired,
-  }).returning();
+  for (const acc of available) {
+    await db.insert(codmAccountsTable).values({
+      userId: user.id,
+      account: JSON.stringify({
+        username: acc.username,
+        password: acc.password,
+        nickname: acc.nickname,
+        uid: acc.uid,
+        level: acc.level,
+        region: acc.region,
+        status: acc.accountStatus,
+      }),
+      status: acc.accountStatus,
+      coinsSpent: Math.round(coinsRequired / size),
+    });
+  }
 
   res.json({
-    id: inserted.id,
-    account: inserted.account,
-    status: inserted.status,
-    coinsSpent: inserted.coinsSpent,
-    createdAt: inserted.createdAt.toISOString(),
+    accounts: available.map(acc => ({
+      username: acc.username,
+      password: acc.password,
+      nickname: acc.nickname ?? null,
+      uid: acc.uid ?? null,
+      level: acc.level ?? null,
+      region: acc.region ?? null,
+      status: acc.accountStatus,
+    })),
+    coinsSpent: coinsRequired,
+    remainingBalance: user.balance - coinsRequired,
   });
 });
 
@@ -77,13 +118,18 @@ router.get("/codm/accounts", requireAuth, async (req: Request, res): Promise<voi
     .where(eq(codmAccountsTable.userId, user.id))
     .orderBy(desc(codmAccountsTable.createdAt));
 
-  res.json(accounts.map(a => ({
-    id: a.id,
-    account: a.account,
-    status: a.status,
-    coinsSpent: a.coinsSpent,
-    createdAt: a.createdAt.toISOString(),
-  })));
+  res.json(accounts.map(a => {
+    let parsed: Record<string, unknown> | null = null;
+    try { parsed = JSON.parse(a.account) as Record<string, unknown>; } catch {}
+    return {
+      id: a.id,
+      account: a.account,
+      parsed,
+      status: a.status,
+      coinsSpent: a.coinsSpent,
+      createdAt: a.createdAt.toISOString(),
+    };
+  }));
 });
 
 export default router;
