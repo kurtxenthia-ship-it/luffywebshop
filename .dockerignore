@@ -1,0 +1,15 @@
+.git
+.gitignore
+.agents
+.local
+.cache
+.replit
+.replitignore
+attached_assets
+node_modules
+**/node_modules
+**/dist
+**/.turbo
+*.log
+*.md
+README*
