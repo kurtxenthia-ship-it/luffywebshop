@@ -70,7 +70,7 @@ if (process.env["NODE_ENV"] === "production") {
   app.use(express.static(frontendDist));
 
   // For any non-API route, serve the React app's index.html (SPA fallback)
-  app.get("*", (_req, res) => {
+  app.use((_req, res) => {
     res.sendFile(path.join(frontendDist, "index.html"));
   });
 }
