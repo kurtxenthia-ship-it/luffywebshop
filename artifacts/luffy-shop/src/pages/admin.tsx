@@ -16,9 +16,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Users, Zap, Gamepad2, CreditCard, ShieldCheck,
-  Clock, CheckCircle2, Upload, Loader2, Settings
+  Users, Zap, Gamepad2, ShieldCheck, Clock, CheckCircle2,
+  Upload, Loader2, Settings, Ban, ServerOff, Package, RefreshCw
 } from "lucide-react";
+
+const BASE_URL = import.meta.env.BASE_URL ?? "/";
 
 const uploadFileSchema = z.object({
   name: z.string().min(1, "File name required"),
@@ -32,47 +34,93 @@ const balanceSchema = z.object({
 type UploadFileForm = z.infer<typeof uploadFileSchema>;
 type BalanceForm = z.infer<typeof balanceSchema>;
 
-function StatCard({ label, value, icon: Icon }: { label: string; value: number | string; icon: React.ElementType }) {
+type TabKey = "stats" | "users" | "codm-pool" | "txt-files" | "pricing";
+
+function TabButton({ id, active, label, icon: Icon, onClick }: { id: string; active: boolean; label: string; icon: React.ElementType; onClick: () => void }) {
   return (
-    <div className="bg-card border border-border rounded-xl p-5" data-testid={`stat-card-${label.toLowerCase().replace(/\s/g, "-")}`}>
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap ${
+        active ? "text-white" : "text-muted-foreground hover:text-foreground hover:bg-accent/30"
+      }`}
+      style={active ? { background: "linear-gradient(135deg, hsl(0,85%,45%) 0%, hsl(0,85%,36%) 100%)", boxShadow: "0 0 12px rgba(220,38,38,0.3)" } : {}}
+    >
+      <Icon size={14} />
+      {label}
+    </button>
+  );
+}
+
+function StatCard({ label, value, icon: Icon, color }: { label: string; value: number | string; icon: React.ElementType; color?: string }) {
+  return (
+    <div className="bg-card border border-border rounded-2xl p-5" data-testid={`stat-card-${label.toLowerCase().replace(/\s/g, "-")}`}>
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
-        <Icon size={16} className="text-muted-foreground" />
+        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{label}</span>
+        <Icon size={15} className="text-muted-foreground" />
       </div>
-      <div className="text-3xl font-black text-foreground">{value}</div>
+      <div className="text-3xl font-black" style={color ? { color } : {}}>{value}</div>
     </div>
   );
 }
 
-function UserBalanceRow({ user, onSuccess }: { user: { id: number; userId: string; username: string; email: string; balance: number }; onSuccess: () => void }) {
+function UserRow({ user, onSuccess }: {
+  user: { id: number; userId: string; username: string; email: string; balance: number; isBanned?: boolean };
+  onSuccess: () => void;
+}) {
   const [editing, setEditing] = useState(false);
+  const [banning, setBanning] = useState(false);
   const { toast } = useToast();
   const updateBalance = useUpdateUserBalance();
+
   const form = useForm<BalanceForm>({
     resolver: zodResolver(balanceSchema),
     defaultValues: { balance: user.balance },
   });
 
-  const onSubmit = (data: BalanceForm) => {
+  const apiBase = BASE_URL.endsWith("/") ? BASE_URL.slice(0, -1) : BASE_URL;
+
+  const onSubmitBalance = (data: BalanceForm) => {
     updateBalance.mutate({ id: user.id, data }, {
       onSuccess: () => {
         toast({ title: "Balance updated", description: `${user.username}'s balance set to ${data.balance} coins.` });
         setEditing(false);
         onSuccess();
       },
-      onError: () => {
-        toast({ title: "Failed", description: "Could not update balance.", variant: "destructive" });
-      },
+      onError: () => toast({ title: "Failed", description: "Could not update balance.", variant: "destructive" }),
     });
   };
 
+  const toggleBan = async () => {
+    setBanning(true);
+    try {
+      const res = await fetch(`${apiBase}/api/users/${user.id}/ban`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ isBanned: !user.isBanned }),
+      });
+      if (res.ok) {
+        toast({ title: user.isBanned ? "User unbanned" : "User banned", description: `${user.username} has been ${user.isBanned ? "unbanned" : "banned"}.` });
+        onSuccess();
+      } else {
+        toast({ title: "Failed", description: "Could not update ban status.", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Error", description: "Network error.", variant: "destructive" });
+    } finally {
+      setBanning(false);
+    }
+  };
+
   return (
-    <div className="bg-secondary/20 rounded-lg p-3 border border-border/50" data-testid={`user-row-${user.id}`}>
+    <div className={`rounded-xl p-3.5 border transition-all ${user.isBanned ? "border-red-500/30 bg-red-500/5" : "border-border/50 bg-secondary/15"}`}
+      data-testid={`user-row-${user.id}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold truncate">{user.username}</span>
-            <span className="font-mono text-xs text-primary">{user.userId}</span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm font-bold truncate">{user.username}</span>
+            <span className="font-mono text-xs" style={{ color: "hsl(215,85%,62%)" }}>{user.userId}</span>
+            {user.isBanned && <span className="text-xs bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded-full font-bold">BANNED</span>}
           </div>
           <div className="text-xs text-muted-foreground truncate">{user.email}</div>
           <div className="flex items-center gap-1.5 mt-1">
@@ -80,43 +128,42 @@ function UserBalanceRow({ user, onSuccess }: { user: { id: number; userId: strin
             <span className="text-xs font-bold">{user.balance} coins</span>
           </div>
         </div>
-        <button
-          onClick={() => setEditing(!editing)}
-          className="text-muted-foreground hover:text-primary transition-colors flex-shrink-0 mt-0.5"
-          data-testid={`button-edit-balance-${user.id}`}
-        >
-          <Settings size={14} />
-        </button>
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <button
+            onClick={toggleBan}
+            disabled={banning}
+            className={`p-1.5 rounded-lg transition-colors ${user.isBanned ? "bg-green-500/15 text-green-500 hover:bg-green-500/25" : "bg-red-500/15 text-red-400 hover:bg-red-500/25"}`}
+            title={user.isBanned ? "Unban user" : "Ban user"}
+            data-testid={`button-ban-${user.id}`}
+          >
+            {banning ? <Loader2 size={13} className="animate-spin" /> : <Ban size={13} />}
+          </button>
+          <button
+            onClick={() => setEditing(!editing)}
+            className="p-1.5 rounded-lg bg-accent/30 text-muted-foreground hover:text-primary hover:bg-accent/60 transition-colors"
+            data-testid={`button-edit-balance-${user.id}`}
+          >
+            <Settings size={13} />
+          </button>
+        </div>
       </div>
       {editing && (
         <div className="mt-3 pt-3 border-t border-border/50">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="flex gap-2">
+            <form onSubmit={form.handleSubmit(onSubmitBalance)} className="flex gap-2">
               <FormField
                 control={form.control}
                 name="balance"
                 render={({ field }) => (
                   <FormItem className="flex-1">
                     <FormControl>
-                      <Input
-                        {...field}
-                        type="number"
-                        min={0}
-                        className="h-8 text-sm bg-background"
-                        data-testid={`input-balance-${user.id}`}
-                      />
+                      <Input {...field} type="number" min={0} className="h-9 text-sm bg-secondary/50 rounded-xl" placeholder="New balance" data-testid={`input-balance-${user.id}`} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button
-                type="submit"
-                size="sm"
-                className="h-8 bg-primary hover:bg-primary/90 text-xs"
-                disabled={updateBalance.isPending}
-                data-testid={`button-save-balance-${user.id}`}
-              >
+              <Button type="submit" disabled={updateBalance.isPending} className="h-9 px-4 rounded-xl text-xs font-bold" data-testid={`button-save-balance-${user.id}`}>
                 {updateBalance.isPending ? <Loader2 size={12} className="animate-spin" /> : "Save"}
               </Button>
             </form>
@@ -130,176 +177,330 @@ function UserBalanceRow({ user, onSuccess }: { user: { id: number; userId: strin
 export default function AdminPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState<TabKey>("stats");
+  const [uploadingCodm, setUploadingCodm] = useState(false);
+  const [codmPoolContent, setCodmPoolContent] = useState("");
+  const [poolStats, setPoolStats] = useState<{ total: number; claimed: number; available: number } | null>(null);
+  const [loadingPoolStats, setLoadingPoolStats] = useState(false);
+  const [pricingData, setPricingData] = useState<{ generator: Record<string, number>; codm: Record<string, number> } | null>(null);
+  const [savingPricing, setSavingPricing] = useState(false);
+
+  const apiBase = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
 
   const { data: stats } = useGetAdminStats({ query: { queryKey: getGetAdminStatsQueryKey() } });
   const { data: recentLogins } = useGetRecentLogins({ query: { queryKey: getGetRecentLoginsQueryKey() } });
   const { data: pendingTopups } = useListPendingTopups({ query: { queryKey: getListPendingTopupsQueryKey() } });
   const { data: users } = useListUsers({ query: { queryKey: getListUsersQueryKey() } });
+  
 
   const approveTopup = useApproveTopup();
-  const uploadFile = useUploadTxtFile();
+  const uploadTxtFile = useUploadTxtFile();
 
-  const adminStats = stats as { totalUsers: number; totalCoinsDistributed: number; totalGenerations: number; pendingTopups: number; totalRevenue: number; totalCodmGenerated: number } | undefined;
-  const loginsList = (recentLogins as Array<{ id: number; userId: number; username: string; email: string; loginAt: string }> | undefined) ?? [];
-  const topupsList = (pendingTopups as Array<{ id: number; userId: number; amount: number; reference: string | null; createdAt: string; user: { username: string; userId: string } }> | undefined) ?? [];
-  const usersList = (users as Array<{ id: number; userId: string; username: string; email: string; balance: number }> | undefined) ?? [];
-
-  const fileForm = useForm<UploadFileForm>({
+  const uploadFileForm = useForm<UploadFileForm>({
     resolver: zodResolver(uploadFileSchema),
     defaultValues: { name: "", content: "" },
   });
 
-  const handleApprove = (id: number) => {
+  const statsData = stats as {
+    totalUsers: number; totalCoinsDistributed: number; totalGenerations: number;
+    pendingTopups: number; totalRevenue: number; totalCodmGenerated: number;
+    codmPoolTotal?: number; codmPoolAvailable?: number;
+  } | undefined;
+
+  const loginsList = (recentLogins as Array<{ id: number; userId: number; username: string; email: string; loginAt: string }> | undefined) ?? [];
+  const pendingList = (pendingTopups as Array<{ id: number; userId: number; amount: number; status: string; reference: string | null; note: string | null; createdAt: string; user: { username: string; userId: string } }> | undefined) ?? [];
+  const usersList = (users as Array<{ id: number; userId: string; username: string; email: string; balance: number; isBanned?: boolean }> | undefined) ?? [];
+
+  const handleApproveTopup = (id: number) => {
     approveTopup.mutate({ id }, {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getListPendingTopupsQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetAdminStatsQueryKey() });
         queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
-        toast({ title: "Topup approved!", description: "Coins added to user balance." });
+        toast({ title: "Topup approved" });
       },
-      onError: () => {
-        toast({ title: "Failed", description: "Could not approve topup.", variant: "destructive" });
-      },
+      onError: () => toast({ title: "Failed to approve", variant: "destructive" }),
     });
   };
 
-  const handleUpload = (data: UploadFileForm) => {
-    uploadFile.mutate({ data }, {
+  const handleUploadTxt = (data: UploadFileForm) => {
+    uploadTxtFile.mutate({ data }, {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getListTxtFilesQueryKey() });
-        fileForm.reset();
-        toast({ title: "File uploaded!", description: "TXT file is now available for generation." });
+        uploadFileForm.reset();
+        toast({ title: "File uploaded successfully" });
       },
-      onError: () => {
-        toast({ title: "Failed", description: "Could not upload file.", variant: "destructive" });
-      },
+      onError: () => toast({ title: "Upload failed", variant: "destructive" }),
     });
   };
+
+  const handleUploadCodmPool = async () => {
+    if (!codmPoolContent.trim()) {
+      toast({ title: "Error", description: "Please paste account content first.", variant: "destructive" });
+      return;
+    }
+    setUploadingCodm(true);
+    try {
+      const res = await fetch(`${apiBase}/api/admin/codm-pool`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ content: codmPoolContent }),
+      });
+      const data = await res.json() as { inserted?: number; error?: string };
+      if (res.ok) {
+        toast({ title: "Accounts uploaded!", description: `${data.inserted} account(s) added to pool.` });
+        setCodmPoolContent("");
+        loadCodmPoolStats();
+      } else {
+        toast({ title: "Upload failed", description: data.error, variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Error", description: "Network error.", variant: "destructive" });
+    } finally {
+      setUploadingCodm(false);
+    }
+  };
+
+  const loadCodmPoolStats = async () => {
+    setLoadingPoolStats(true);
+    try {
+      const res = await fetch(`${apiBase}/api/admin/codm-pool/stats`, { credentials: "include" });
+      if (res.ok) setPoolStats(await res.json() as { total: number; claimed: number; available: number });
+    } catch {}
+    setLoadingPoolStats(false);
+  };
+
+  const loadPricingConfig = async () => {
+    try {
+      const res = await fetch(`${apiBase}/api/admin/config/pricing`, { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json() as { generator_pricing: Record<string, number>; codm_pricing: Record<string, number> };
+        setPricingData({ generator: data.generator_pricing, codm: data.codm_pricing });
+      }
+    } catch {}
+  };
+
+  const savePricing = async () => {
+    if (!pricingData) return;
+    setSavingPricing(true);
+    try {
+      const res = await fetch(`${apiBase}/api/admin/config/pricing`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ generator_pricing: pricingData.generator, codm_pricing: pricingData.codm }),
+      });
+      if (res.ok) {
+        toast({ title: "Pricing saved!", description: "New pricing is now active." });
+      } else {
+        toast({ title: "Failed to save", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Error", variant: "destructive" });
+    } finally {
+      setSavingPricing(false);
+    }
+  };
+
+  const handleTabChange = (tab: TabKey) => {
+    setActiveTab(tab);
+    if (tab === "codm-pool" && !poolStats) loadCodmPoolStats();
+    if (tab === "pricing" && !pricingData) loadPricingConfig();
+  };
+
+  const tabs: { id: TabKey; label: string; icon: React.ElementType }[] = [
+    { id: "stats", label: "Stats", icon: ShieldCheck },
+    { id: "users", label: "Users", icon: Users },
+    { id: "codm-pool", label: "CODM Pool", icon: Gamepad2 },
+    { id: "txt-files", label: "TXT Files", icon: Zap },
+    { id: "pricing", label: "Pricing", icon: Settings },
+  ];
 
   return (
     <Layout>
       <div className="space-y-6">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center">
-            <ShieldCheck size={16} className="text-primary" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-black tracking-tight">Admin Dashboard</h1>
-            <p className="text-muted-foreground text-sm">Manage users, topups, and content</p>
-          </div>
+        {/* Header */}
+        <div>
+          <h1 className="text-2xl font-black tracking-tight">
+            <span style={{ background: "linear-gradient(135deg, hsl(0,85%,62%) 0%, hsl(215,85%,65%) 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+              Admin Panel
+            </span>
+          </h1>
+          <p className="text-muted-foreground text-sm mt-1">Manage your LUFFY XO.SHOP platform</p>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-          <StatCard label="Total Users" value={adminStats?.totalUsers ?? 0} icon={Users} />
-          <StatCard label="Coins Distributed" value={adminStats?.totalCoinsDistributed ?? 0} icon={CoinIcon} />
-          <StatCard label="Generations" value={adminStats?.totalGenerations ?? 0} icon={Zap} />
-          <StatCard label="Pending Topups" value={adminStats?.pendingTopups ?? 0} icon={CreditCard} />
-          <StatCard label="Total Revenue" value={`₱${adminStats?.totalRevenue ?? 0}`} icon={CreditCard} />
-          <StatCard label="CODM Generated" value={adminStats?.totalCodmGenerated ?? 0} icon={Gamepad2} />
+        {/* Tabs */}
+        <div className="flex gap-1.5 overflow-x-auto pb-1 flex-wrap">
+          {tabs.map(tab => (
+            <TabButton key={tab.id} id={tab.id} active={activeTab === tab.id} label={tab.label} icon={tab.icon} onClick={() => handleTabChange(tab.id)} />
+          ))}
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          {/* Pending topups */}
-          <div className="bg-card border border-border rounded-xl p-5">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
-              <CreditCard size={14} />
-              Pending Topups ({topupsList.length})
-            </h3>
-            {topupsList.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-6">No pending topups</p>
-            ) : (
-              <div className="space-y-2">
-                {topupsList.map((tx) => (
-                  <div key={tx.id} className="bg-secondary/20 rounded-lg p-3 border border-border/50 flex items-center justify-between gap-3" data-testid={`pending-topup-${tx.id}`}>
-                    <div>
-                      <div className="text-sm font-semibold">{tx.user?.username ?? "User"} <span className="text-xs font-mono text-primary">{tx.user?.userId}</span></div>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <CoinIcon size={12} />
-                        <span className="text-sm font-bold">{tx.amount} coins</span>
+        {/* STATS TAB */}
+        {activeTab === "stats" && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <StatCard label="Total Users" value={statsData?.totalUsers ?? 0} icon={Users} color="hsl(215,85%,62%)" />
+              <StatCard label="Generations" value={statsData?.totalGenerations ?? 0} icon={Zap} color="hsl(0,85%,60%)" />
+              <StatCard label="CODM Claimed" value={statsData?.totalCodmGenerated ?? 0} icon={Gamepad2} color="hsl(30,90%,55%)" />
+              <StatCard label="Pending Topups" value={statsData?.pendingTopups ?? 0} icon={Clock} />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <StatCard label="CODM Pool Total" value={statsData?.codmPoolTotal ?? 0} icon={Package} />
+              <StatCard label="CODM Pool Available" value={statsData?.codmPoolAvailable ?? 0} icon={Package} color="hsl(150,60%,45%)" />
+            </div>
+
+            {/* Pending topups */}
+            <div className="bg-card border border-border rounded-2xl p-5">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
+                <Clock size={13} />Pending Top-up Requests
+              </h3>
+              {pendingList.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">No pending requests</p>
+              ) : (
+                <div className="space-y-2">
+                  {pendingList.map(tx => (
+                    <div key={tx.id} className="flex items-center justify-between bg-secondary/20 rounded-xl p-3.5 border border-border/50">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold">{tx.user.username}</span>
+                          <span className="font-mono text-xs text-muted-foreground">{tx.user.userId}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <CoinIcon size={13} />
+                          <span className="text-sm font-black">{tx.amount} coins</span>
+                        </div>
+                        {tx.reference && <div className="text-xs text-muted-foreground font-mono mt-0.5">Ref: {tx.reference}</div>}
                       </div>
-                      {tx.reference && <p className="text-xs text-muted-foreground font-mono">Ref: {tx.reference}</p>}
+                      <Button
+                        size="sm"
+                        onClick={() => handleApproveTopup(tx.id)}
+                        disabled={approveTopup.isPending}
+                        className="rounded-xl font-bold text-xs"
+                        style={{ background: "linear-gradient(135deg, hsl(150,65%,40%) 0%, hsl(150,65%,30%) 100%)" }}
+                        data-testid={`button-approve-topup-${tx.id}`}
+                      >
+                        <CheckCircle2 size={13} className="mr-1" />Approve
+                      </Button>
                     </div>
-                    <Button
-                      size="sm"
-                      onClick={() => handleApprove(tx.id)}
-                      disabled={approveTopup.isPending}
-                      className="bg-green-600 hover:bg-green-700 text-white text-xs flex-shrink-0"
-                      data-testid={`button-approve-topup-${tx.id}`}
-                    >
-                      <CheckCircle2 size={12} className="mr-1" /> Approve
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
-          {/* Recent logins */}
-          <div className="bg-card border border-border rounded-xl p-5">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
-              <Clock size={14} />
-              Recent Logins
-            </h3>
-            {loginsList.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-6">No recent logins</p>
-            ) : (
-              <div className="space-y-2 max-h-72 overflow-auto">
-                {loginsList.map((event) => (
-                  <div key={event.id} className="flex items-center justify-between py-1.5 border-b border-border/50 last:border-0" data-testid={`login-event-${event.id}`}>
+            {/* Recent logins */}
+            <div className="bg-card border border-border rounded-2xl p-5">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
+                <Clock size={13} />Recent Logins
+              </h3>
+              <div className="space-y-1 max-h-64 overflow-auto">
+                {loginsList.slice(0, 20).map(e => (
+                  <div key={e.id} className="flex items-center justify-between py-2 border-b border-border/40 last:border-0">
                     <div>
-                      <div className="text-sm font-semibold">{event.username}</div>
-                      <div className="text-xs text-muted-foreground">{event.email}</div>
+                      <span className="text-sm font-semibold">{e.username}</span>
+                      <span className="text-xs text-muted-foreground ml-2">{e.email}</span>
                     </div>
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(event.loginAt).toLocaleDateString("en-PH", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-                    </span>
+                    <span className="text-xs text-muted-foreground">{new Date(e.loginAt).toLocaleString("en-PH", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
                   </div>
                 ))}
               </div>
-            )}
+            </div>
           </div>
+        )}
 
-          {/* Upload TXT file */}
-          <div className="bg-card border border-border rounded-xl p-5">
+        {/* USERS TAB */}
+        {activeTab === "users" && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">{usersList.length} total users</p>
+            </div>
+            {usersList.map(user => (
+              <UserRow key={user.id} user={user} onSuccess={() => queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() })} />
+            ))}
+          </div>
+        )}
+
+        {/* CODM POOL TAB */}
+        {activeTab === "codm-pool" && (
+          <div className="space-y-4">
+            {/* Stats bar */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-card border border-border rounded-2xl p-4 text-center">
+                <div className="text-2xl font-black">{loadingPoolStats ? "..." : (poolStats?.total ?? 0)}</div>
+                <div className="text-xs text-muted-foreground mt-1">Total</div>
+              </div>
+              <div className="rounded-2xl p-4 text-center" style={{ background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.2)" }}>
+                <div className="text-2xl font-black text-primary">{loadingPoolStats ? "..." : (poolStats?.claimed ?? 0)}</div>
+                <div className="text-xs text-muted-foreground mt-1">Claimed</div>
+              </div>
+              <div className="rounded-2xl p-4 text-center" style={{ background: "rgba(59,130,246,0.1)", border: "1px solid rgba(59,130,246,0.2)" }}>
+                <div className="text-2xl font-black" style={{ color: "hsl(215,85%,62%)" }}>{loadingPoolStats ? "..." : (poolStats?.available ?? 0)}</div>
+                <div className="text-xs text-muted-foreground mt-1">Available</div>
+              </div>
+            </div>
+
+            <button onClick={loadCodmPoolStats} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+              <RefreshCw size={12} />Refresh stats
+            </button>
+
+            {/* Upload form */}
+            <div className="bg-card border border-border rounded-2xl p-5">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
+                <Upload size={13} />Upload Accounts
+              </h3>
+              <p className="text-xs text-muted-foreground mb-3">
+                Paste account data in the format with Username:, Password:, Nickname:, UID:, Level:, Region:, Status: fields. Multiple accounts are supported.
+              </p>
+              <Textarea
+                value={codmPoolContent}
+                onChange={(e) => setCodmPoolContent(e.target.value)}
+                placeholder={"🎯 NEW HIT FOUND!\n━━━━━━━━━━━━━━━━━━━━\n👤 Username: ichigo_codm\n🔑 Password: jerilouise25\n━━━━━━━━━━━━━━━━━━━━\n🎮 CODM Info\n   📛 Nickname: LAPUKDEAD\n   🆔 UID: 387255958821178\n   ⭐ Level: 157\n   🌏 Region: PH\n━━━━━━━━━━━━━━━━━━━━\n📊 Status: NOT CLEAN"}
+                className="min-h-[200px] text-xs font-mono rounded-xl bg-secondary/30"
+                data-testid="textarea-codm-pool"
+              />
+              <Button
+                onClick={handleUploadCodmPool}
+                disabled={uploadingCodm || !codmPoolContent.trim()}
+                className="mt-3 w-full h-10 font-bold rounded-xl"
+                style={{ background: "linear-gradient(135deg, hsl(0,85%,48%) 0%, hsl(0,85%,38%) 100%)" }}
+                data-testid="button-upload-codm-pool"
+              >
+                {uploadingCodm ? <><Loader2 size={14} className="animate-spin mr-2" />Uploading...</> : <><Upload size={14} className="mr-2" />Add to Pool</>}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* TXT FILES TAB */}
+        {activeTab === "txt-files" && (
+          <div className="bg-card border border-border rounded-2xl p-5">
             <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
-              <Upload size={14} />
-              Upload TXT File
+              <Upload size={13} />Upload TXT File
             </h3>
-            <Form {...fileForm}>
-              <form onSubmit={fileForm.handleSubmit(handleUpload)} className="space-y-4">
+            <Form {...uploadFileForm}>
+              <form onSubmit={uploadFileForm.handleSubmit(handleUploadTxt)} className="space-y-4">
                 <FormField
-                  control={fileForm.control}
+                  control={uploadFileForm.control}
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">File Name</FormLabel>
+                      <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">File Name</FormLabel>
                       <FormControl>
-                        <Input
-                          {...field}
-                          placeholder="e.g. Premium Accounts Dec 2025"
-                          className="bg-secondary/50 h-10 text-sm"
-                          data-testid="input-file-name"
-                        />
+                        <Input {...field} placeholder="e.g. Premium Accounts Vol.1" className="rounded-xl bg-secondary/40 h-10 text-sm" data-testid="input-file-name" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
                 <FormField
-                  control={fileForm.control}
+                  control={uploadFileForm.control}
                   name="content"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Content (one line per entry)</FormLabel>
+                      <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Content (one line per entry)</FormLabel>
                       <FormControl>
-                        <Textarea
-                          {...field}
-                          placeholder={"username1:password1\nusername2:password2\n..."}
-                          rows={8}
-                          className="bg-secondary/50 text-sm font-mono resize-none"
-                          data-testid="textarea-file-content"
-                        />
+                        <Textarea {...field} placeholder={"user1:pass1\nuser2:pass2\n..."} className="min-h-[180px] rounded-xl bg-secondary/30 text-xs font-mono" data-testid="textarea-file-content" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -307,44 +508,96 @@ export default function AdminPage() {
                 />
                 <Button
                   type="submit"
-                  className="w-full h-10 font-bold bg-primary hover:bg-primary/90 shadow-lg shadow-primary/30"
-                  disabled={uploadFile.isPending}
+                  disabled={uploadTxtFile.isPending}
+                  className="w-full h-10 font-bold rounded-xl"
+                  style={{ background: "linear-gradient(135deg, hsl(0,85%,48%) 0%, hsl(0,85%,38%) 100%)" }}
                   data-testid="button-upload-file"
                 >
-                  {uploadFile.isPending ? (
-                    <><Loader2 size={14} className="animate-spin mr-2" />Uploading...</>
-                  ) : (
-                    <><Upload size={14} className="mr-2" />Upload File</>
-                  )}
+                  {uploadTxtFile.isPending ? <><Loader2 size={14} className="animate-spin mr-2" />Uploading...</> : <><Upload size={14} className="mr-2" />Upload File</>}
                 </Button>
               </form>
             </Form>
           </div>
+        )}
 
-          {/* Users list */}
-          <div className="bg-card border border-border rounded-xl p-5">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
-              <Users size={14} />
-              All Users ({usersList.length})
-            </h3>
-            {usersList.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-6">No users registered</p>
-            ) : (
-              <div className="space-y-2 max-h-96 overflow-auto">
-                {usersList.map((u) => (
-                  <UserBalanceRow
-                    key={u.id}
-                    user={u}
-                    onSuccess={() => {
-                      queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
-                      queryClient.invalidateQueries({ queryKey: getGetAdminStatsQueryKey() });
-                    }}
-                  />
-                ))}
+        {/* PRICING TAB */}
+        {activeTab === "pricing" && (
+          <div className="space-y-4">
+            <div className="bg-card border border-border rounded-2xl p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                  <Zap size={13} />Generator Pricing (coins per N lines)
+                </h3>
+                {!pricingData && (
+                  <button onClick={loadPricingConfig} className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1">
+                    <RefreshCw size={11} />Load
+                  </button>
+                )}
               </div>
+              {pricingData ? (
+                <div className="space-y-3">
+                  {Object.entries(pricingData.generator).map(([lines, coins]) => (
+                    <div key={lines} className="flex items-center gap-3">
+                      <div className="w-16 text-sm font-bold text-muted-foreground">{Number(lines).toLocaleString()}</div>
+                      <div className="text-xs text-muted-foreground">lines =</div>
+                      <Input
+                        type="number"
+                        min={1}
+                        value={coins}
+                        onChange={(e) => setPricingData(prev => prev ? { ...prev, generator: { ...prev.generator, [lines]: parseInt(e.target.value) || 0 } } : null)}
+                        className="w-24 h-9 text-sm rounded-xl bg-secondary/40"
+                      />
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <CoinIcon size={12} />coins
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Loading pricing data...</p>
+              )}
+            </div>
+
+            <div className="bg-card border border-border rounded-2xl p-5">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
+                <Gamepad2 size={13} />CODM Pricing (coins per package)
+              </h3>
+              {pricingData ? (
+                <div className="space-y-3">
+                  {Object.entries(pricingData.codm).map(([count, coins]) => (
+                    <div key={count} className="flex items-center gap-3">
+                      <div className="w-16 text-sm font-bold text-muted-foreground">{count} acc</div>
+                      <div className="text-xs text-muted-foreground">=</div>
+                      <Input
+                        type="number"
+                        min={1}
+                        value={coins}
+                        onChange={(e) => setPricingData(prev => prev ? { ...prev, codm: { ...prev.codm, [count]: parseInt(e.target.value) || 0 } } : null)}
+                        className="w-24 h-9 text-sm rounded-xl bg-secondary/40"
+                      />
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <CoinIcon size={12} />coins
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Loading pricing data...</p>
+              )}
+            </div>
+
+            {pricingData && (
+              <Button
+                onClick={savePricing}
+                disabled={savingPricing}
+                className="w-full h-11 font-bold rounded-xl"
+                style={{ background: "linear-gradient(135deg, hsl(0,85%,48%) 0%, hsl(0,85%,38%) 100%)", boxShadow: "0 0 16px rgba(220,38,38,0.25)" }}
+              >
+                {savingPricing ? <><Loader2 size={14} className="animate-spin mr-2" />Saving...</> : "Save Pricing Config"}
+              </Button>
             )}
           </div>
-        </div>
+        )}
       </div>
     </Layout>
   );
