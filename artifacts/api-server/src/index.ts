@@ -17,8 +17,12 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
-await runMigrations();
-await seedAdmin();
+try {
+  await runMigrations();
+  await seedAdmin();
+} catch (err) {
+  logger.error({ err }, "Startup DB error — continuing anyway");
+}
 
 app.listen(port, (err) => {
   if (err) {
