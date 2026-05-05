@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request } from "express";
-import { db, txtFilesTable, generationHistoryTable, transactionsTable, usersTable } from "@workspace/db";
+import { db, txtFilesTable, generationHistoryTable, transactionsTable, usersTable, siteConfigTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { UploadTxtFileBody, GenerateTxtBody } from "@workspace/api-zod";
 import { requireAuth, requireAdmin } from "../middlewares/auth";
@@ -9,11 +9,31 @@ const router: IRouter = Router();
 
 type UserRequest = Request & { user: typeof usersTable.$inferSelect };
 
-const COIN_COSTS: Record<number, number> = {
-  50: 20,
-  100: 40,
-  200: 80,
+const DEFAULT_COIN_COSTS: Record<number, number> = {
+  1000: 10,
+  2000: 20,
+  3000: 30,
+  4000: 40,
+  5000: 50,
 };
+
+function getCoinCost(lineCount: number, pricing: Record<number, number>): number {
+  if (pricing[lineCount] !== undefined) return pricing[lineCount];
+  if (lineCount > 0 && lineCount <= 100000) {
+    return Math.ceil(lineCount / 1000) * 10;
+  }
+  return -1;
+}
+
+async function getGeneratorPricing(): Promise<Record<number, number>> {
+  try {
+    const [config] = await db.select().from(siteConfigTable).where(eq(siteConfigTable.key, "generator_pricing"));
+    if (config) return JSON.parse(config.value) as Record<number, number>;
+  } catch {}
+  return DEFAULT_COIN_COSTS;
+}
+
+void formatUser;
 
 router.get("/generator/files", requireAuth, async (_req, res): Promise<void> => {
   const files = await db.select({
@@ -63,10 +83,11 @@ router.post("/generator/generate", requireAuth, async (req: Request, res): Promi
   }
 
   const { fileId, lineCount } = body.data;
-  const coinsRequired = COIN_COSTS[lineCount];
+  const pricing = await getGeneratorPricing();
+  const coinsRequired = getCoinCost(lineCount, pricing);
 
-  if (coinsRequired == null) {
-    res.status(400).json({ error: "Invalid line count. Choose 50, 100, or 200." });
+  if (coinsRequired < 0) {
+    res.status(400).json({ error: "Invalid line count. Must be between 1 and 100,000." });
     return;
   }
 
