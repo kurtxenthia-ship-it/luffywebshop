@@ -1,4 +1,4 @@
-import express, { type Express } from "express";
+import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
 import session from "express-session";
@@ -55,24 +55,29 @@ app.use(
       secure: process.env["NODE_ENV"] === "production",
       httpOnly: true,
       sameSite: "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     },
   }),
 );
 
 app.use("/api", router);
 
-// Serve the built frontend static files in production
 if (process.env["NODE_ENV"] === "production") {
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
   const frontendDist = path.resolve(__dirname, "../../luffy-shop/dist/public");
 
   app.use(express.static(frontendDist));
 
-  // For any non-API route, serve the React app's index.html (SPA fallback)
   app.use((_req, res) => {
     res.sendFile(path.join(frontendDist, "index.html"));
   });
 }
+
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+  logger.error({ err }, "Unhandled error");
+  if (!res.headersSent) {
+    res.status(500).json({ error: err.message || "Internal server error" });
+  }
+});
 
 export default app;
