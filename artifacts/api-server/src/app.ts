@@ -46,7 +46,7 @@ app.use(
   session({
     store: new PgSession({
       pool,
-      createTableIfMissing: false,
+      createTableIfMissing: true,
     }),
     secret: process.env["SESSION_SECRET"] ?? "luffy-xo-shop-secret",
     resave: false,
