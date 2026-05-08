@@ -11,6 +11,9 @@ import CodmPage from "@/pages/codm";
 import AboutPage from "@/pages/topup";
 import AdminPage from "@/pages/admin";
 import SmsPage from "@/pages/sms";
+import TgPage from "@/pages/tg";
+import FeedbackPage from "@/pages/feedback";
+import CheckerPage from "@/pages/checker";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
@@ -41,6 +44,9 @@ function AppRoutes() {
       <Route path="/generator" component={() => <ProtectedRoute component={GeneratorPage} />} />
       <Route path="/codm" component={() => <ProtectedRoute component={CodmPage} />} />
       <Route path="/sms" component={() => <ProtectedRoute component={SmsPage} />} />
+      <Route path="/tg" component={() => <ProtectedRoute component={TgPage} />} />
+      <Route path="/feedback" component={() => <ProtectedRoute component={FeedbackPage} />} />
+      <Route path="/checker" component={() => <ProtectedRoute component={CheckerPage} />} />
       <Route path="/about" component={() => <ProtectedRoute component={AboutPage} />} />
       <Route path="/topup" component={() => <Redirect to="/about" />} />
       <Route path="/admin" component={() => <AdminRoute component={AdminPage} />} />
