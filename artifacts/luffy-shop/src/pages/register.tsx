@@ -56,8 +56,6 @@ export default function RegisterPage() {
           style={{ background: "radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%)", filter: "blur(60px)" }} />
         <div className="absolute bottom-1/3 left-1/3 w-[350px] h-[350px] rounded-full"
           style={{ background: "radial-gradient(circle, rgba(139,92,246,0.14) 0%, transparent 70%)", filter: "blur(55px)" }} />
-        <div className="absolute top-1/5 left-1/5 w-[280px] h-[280px] rounded-full"
-          style={{ background: "radial-gradient(circle, rgba(236,72,153,0.08) 0%, transparent 70%)", filter: "blur(50px)" }} />
         {[...Array(18)].map((_, i) => (
           <div key={i} className="absolute rounded-full animate-twinkle"
             style={{
@@ -79,8 +77,11 @@ export default function RegisterPage() {
             }}>
             <User size={26} style={{ color: "hsl(215,85%,68%)" }} />
           </div>
-          <h1 className="text-2xl font-black tracking-tight text-galaxy">CREATE ACCOUNT</h1>
-          <p className="text-sm text-muted-foreground mt-2">Join COZY XO.SHOP — explore the galaxy</p>
+          <h1 className="text-2xl font-black tracking-tight"
+            style={{ background: "linear-gradient(135deg, hsl(271,85%,72%) 0%, hsl(215,85%,65%) 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+            CREATE ACCOUNT
+          </h1>
+          <p className="text-sm text-muted-foreground mt-2">Join COZY XO.SHOP</p>
         </div>
 
         <div className="rounded-2xl p-6"
