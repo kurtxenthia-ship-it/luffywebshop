@@ -7,6 +7,9 @@ import generatorRouter from "./generator";
 import codmRouter from "./codm";
 import adminRouter from "./admin";
 import smsRouter from "./sms";
+import tgRouter from "./tg";
+import feedbackRouter from "./feedback";
+import checkerRouter from "./checker";
 
 const router: IRouter = Router();
 
@@ -18,5 +21,8 @@ router.use(generatorRouter);
 router.use(codmRouter);
 router.use(adminRouter);
 router.use(smsRouter);
+router.use(tgRouter);
+router.use(feedbackRouter);
+router.use(checkerRouter);
 
 export default router;
