@@ -10,14 +10,10 @@ import GeneratorPage from "@/pages/generator";
 import CodmPage from "@/pages/codm";
 import AboutPage from "@/pages/topup";
 import AdminPage from "@/pages/admin";
+import SmsPage from "@/pages/sms";
 
 const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
+  defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
 });
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
@@ -37,7 +33,6 @@ function AdminRoute({ component: Component }: { component: React.ComponentType }
 function AppRoutes() {
   const { user, loading } = useAuth();
   if (loading) return null;
-
   return (
     <Switch>
       <Route path="/" component={() => user ? <Redirect to={user.isAdmin ? "/admin" : "/dashboard"} /> : <LoginPage />} />
@@ -45,6 +40,7 @@ function AppRoutes() {
       <Route path="/dashboard" component={() => <ProtectedRoute component={DashboardPage} />} />
       <Route path="/generator" component={() => <ProtectedRoute component={GeneratorPage} />} />
       <Route path="/codm" component={() => <ProtectedRoute component={CodmPage} />} />
+      <Route path="/sms" component={() => <ProtectedRoute component={SmsPage} />} />
       <Route path="/about" component={() => <ProtectedRoute component={AboutPage} />} />
       <Route path="/topup" component={() => <Redirect to="/about" />} />
       <Route path="/admin" component={() => <AdminRoute component={AdminPage} />} />

@@ -16,7 +16,6 @@ const registerSchema = z.object({
   email: z.string().email("Invalid email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
-
 type RegisterForm = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
@@ -40,7 +39,7 @@ export default function RegisterPage() {
         playLoginSound();
         setUser(user);
         setLocation("/dashboard");
-        toast({ title: "Welcome to LUFFY XO.SHOP!", description: `Your ID: ${user.userId}` });
+        toast({ title: "Welcome to COZY XO.SHOP!", description: `Your ID: ${user.userId}` });
       },
       onError: () => {
         toast({ title: "Registration failed", description: "Email may already be in use.", variant: "destructive" });
@@ -49,110 +48,104 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden" style={{ background: "hsl(222,18%,4%)" }}>
-      {/* Background glows */}
+    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden"
+      style={{ background: "hsl(262,45%,3%)" }}>
+
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-1/3 right-1/4 w-[400px] h-[400px] rounded-full opacity-15"
-          style={{ background: "radial-gradient(circle, hsl(215,85%,55%) 0%, transparent 70%)", filter: "blur(80px)" }} />
-        <div className="absolute bottom-1/4 left-1/3 w-[350px] h-[350px] rounded-full opacity-12"
-          style={{ background: "radial-gradient(circle, hsl(0,85%,50%) 0%, transparent 70%)", filter: "blur(80px)" }} />
+        <div className="absolute top-1/3 right-1/4 w-[400px] h-[400px] rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%)", filter: "blur(60px)" }} />
+        <div className="absolute bottom-1/3 left-1/3 w-[350px] h-[350px] rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(139,92,246,0.14) 0%, transparent 70%)", filter: "blur(55px)" }} />
+        <div className="absolute top-1/5 left-1/5 w-[280px] h-[280px] rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(236,72,153,0.08) 0%, transparent 70%)", filter: "blur(50px)" }} />
+        {[...Array(18)].map((_, i) => (
+          <div key={i} className="absolute rounded-full animate-twinkle"
+            style={{
+              width: `${Math.random() * 2 + 1}px`, height: `${Math.random() * 2 + 1}px`,
+              background: "white", opacity: Math.random() * 0.5 + 0.15,
+              top: `${Math.random() * 100}%`, left: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 4}s`,
+            }} />
+        ))}
       </div>
 
       <div className="relative z-10 w-full max-w-sm px-6">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 mx-auto"
-            style={{ background: "linear-gradient(135deg, rgba(59,130,246,0.15) 0%, rgba(220,38,38,0.12) 100%)", border: "1px solid rgba(59,130,246,0.3)", boxShadow: "0 0 24px rgba(59,130,246,0.2)" }}>
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
-              <path d="M12 2L15 9H22L16.5 13.5L18.5 21L12 16.5L5.5 21L7.5 13.5L2 9H9L12 2Z"
-                style={{ fill: "hsl(215,85%,62%)" }} />
-            </svg>
+            style={{
+              background: "linear-gradient(135deg, rgba(59,130,246,0.20) 0%, rgba(139,92,246,0.18) 100%)",
+              border: "1px solid rgba(59,130,246,0.35)",
+              boxShadow: "0 0 26px rgba(59,130,246,0.22)",
+            }}>
+            <User size={26} style={{ color: "hsl(215,85%,68%)" }} />
           </div>
-          <h1 className="text-2xl font-black tracking-tight">CREATE ACCOUNT</h1>
-          <p className="text-sm text-muted-foreground mt-1">Join LUFFY XO.SHOP today</p>
+          <h1 className="text-2xl font-black tracking-tight text-galaxy">CREATE ACCOUNT</h1>
+          <p className="text-sm text-muted-foreground mt-2">Join COZY XO.SHOP — explore the galaxy</p>
         </div>
 
         <div className="rounded-2xl p-6"
-          style={{ background: "hsl(220,16%,7%)", border: "1px solid hsl(218,20%,13%)", boxShadow: "0 24px 64px rgba(0,0,0,0.6)" }}>
+          style={{
+            background: "hsl(262,38%,6%)",
+            border: "1px solid rgba(59,130,246,0.2)",
+            boxShadow: "0 24px 64px rgba(0,0,0,0.7), 0 0 40px rgba(59,130,246,0.05)",
+          }}>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="username"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Username</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <User className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={13} />
-                        <Input
-                          {...field}
-                          placeholder="your_username"
-                          className="pl-9 h-10 text-sm rounded-xl"
-                          style={{ background: "hsl(218,22%,11%)", borderColor: "hsl(218,22%,16%)" }}
-                          data-testid="input-username"
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Email</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={13} />
-                        <Input
-                          {...field}
-                          type="email"
-                          placeholder="your@email.com"
-                          className="pl-9 h-10 text-sm rounded-xl"
-                          style={{ background: "hsl(218,22%,11%)", borderColor: "hsl(218,22%,16%)" }}
-                          data-testid="input-email"
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Password</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={13} />
-                        <Input
-                          {...field}
-                          type="password"
-                          placeholder="min. 6 characters"
-                          className="pl-9 h-10 text-sm rounded-xl"
-                          style={{ background: "hsl(218,22%,11%)", borderColor: "hsl(218,22%,16%)" }}
-                          data-testid="input-password"
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button
-                type="submit"
-                className="w-full h-11 font-black tracking-widest rounded-xl text-white shadow-lg transition-all"
-                style={{ background: "linear-gradient(135deg, hsl(215,85%,52%) 0%, hsl(215,85%,40%) 100%)", boxShadow: "0 0 20px rgba(59,130,246,0.3)" }}
-                disabled={registerMutation.isPending}
-                data-testid="button-register"
-              >
-                {registerMutation.isPending ? (
-                  <><Loader2 size={14} className="animate-spin mr-2" />Creating account...</>
-                ) : "CREATE ACCOUNT"}
+              <FormField control={form.control} name="username" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Username</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={13} />
+                      <Input {...field} placeholder="your_username"
+                        className="pl-9 h-11 text-sm rounded-xl"
+                        style={{ background: "rgba(59,130,246,0.06)", borderColor: "rgba(59,130,246,0.2)" }}
+                        data-testid="input-username" />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="email" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Email</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={13} />
+                      <Input {...field} type="email" placeholder="your@email.com"
+                        className="pl-9 h-11 text-sm rounded-xl"
+                        style={{ background: "rgba(59,130,246,0.06)", borderColor: "rgba(59,130,246,0.2)" }}
+                        data-testid="input-email" />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="password" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Password</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={13} />
+                      <Input {...field} type="password" placeholder="min. 6 characters"
+                        className="pl-9 h-11 text-sm rounded-xl"
+                        style={{ background: "rgba(59,130,246,0.06)", borderColor: "rgba(59,130,246,0.2)" }}
+                        data-testid="input-password" />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <Button type="submit"
+                className="w-full h-11 font-black tracking-widest rounded-xl text-white shadow-lg mt-1"
+                style={{
+                  background: "linear-gradient(135deg, hsl(215,85%,52%) 0%, hsl(271,85%,58%) 100%)",
+                  boxShadow: "0 0 24px rgba(59,130,246,0.35)",
+                }}
+                disabled={registerMutation.isPending} data-testid="button-register">
+                {registerMutation.isPending
+                  ? <><Loader2 size={14} className="animate-spin mr-2" />Creating...</>
+                  : "CREATE ACCOUNT"}
               </Button>
             </form>
           </Form>
@@ -160,8 +153,8 @@ export default function RegisterPage() {
 
         <p className="text-center text-sm text-muted-foreground mt-5">
           Already have an account?{" "}
-          <Link href="/" className="font-bold transition-colors" style={{ color: "hsl(0,85%,60%)" }} data-testid="link-login">
-            Login
+          <Link href="/" className="font-bold transition-colors" style={{ color: "hsl(271,75%,72%)" }} data-testid="link-login">
+            Sign in
           </Link>
         </p>
       </div>

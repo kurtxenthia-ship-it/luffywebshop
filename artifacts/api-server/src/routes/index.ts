@@ -6,6 +6,7 @@ import balanceRouter from "./balance";
 import generatorRouter from "./generator";
 import codmRouter from "./codm";
 import adminRouter from "./admin";
+import smsRouter from "./sms";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use(balanceRouter);
 router.use(generatorRouter);
 router.use(codmRouter);
 router.use(adminRouter);
+router.use(smsRouter);
 
 export default router;

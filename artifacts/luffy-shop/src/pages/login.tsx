@@ -8,15 +8,44 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { CoinIcon } from "@/components/CoinIcon";
 import { playLoginSound } from "@/lib/sound";
 import { Loader2, Lock, Mail } from "lucide-react";
+
+function GalaxyLogo() {
+  return (
+    <svg width="36" height="36" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="login-core" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="white" stopOpacity="1"/>
+          <stop offset="60%" stopColor="hsl(271,85%,78%)" stopOpacity="0.9"/>
+          <stop offset="100%" stopColor="hsl(215,85%,65%)" stopOpacity="0.5"/>
+        </radialGradient>
+        <linearGradient id="login-arm" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="hsl(271,85%,70%)" stopOpacity="0.9"/>
+          <stop offset="50%" stopColor="hsl(215,85%,65%)" stopOpacity="0.7"/>
+          <stop offset="100%" stopColor="hsl(315,75%,65%)" stopOpacity="0.4"/>
+        </linearGradient>
+        <filter id="login-glow">
+          <feGaussianBlur stdDeviation="1.5" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <path d="M16 16 Q26 6 27 16 Q26 26 16 27 Q6 26 5 16 Q6 6 16 5" stroke="url(#login-arm)" strokeWidth="1.8" fill="none" strokeLinecap="round" opacity="0.75"/>
+      <path d="M16 16 Q21 11 22 16 Q21 21 16 22 Q11 21 10 16 Q11 11 16 10" stroke="url(#login-arm)" strokeWidth="1.1" fill="none" strokeLinecap="round" opacity="0.55"/>
+      <circle cx="16" cy="16" r="4.5" fill="url(#login-core)" filter="url(#login-glow)" opacity="0.9"/>
+      <circle cx="16" cy="16" r="2" fill="white" opacity="0.95"/>
+      <circle cx="4" cy="5" r="1.1" fill="white" opacity="0.9"/>
+      <circle cx="28" cy="4" r="0.8" fill="hsl(271,85%,85%)" opacity="0.8"/>
+      <circle cx="29" cy="25" r="0.9" fill="white" opacity="0.7"/>
+      <circle cx="3" cy="27" r="0.7" fill="hsl(215,85%,80%)" opacity="0.8"/>
+    </svg>
+  );
+}
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email"),
   password: z.string().min(1, "Password required"),
 });
-
 type LoginForm = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
@@ -49,92 +78,94 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden" style={{ background: "hsl(222,18%,4%)" }}>
-      {/* Background glows */}
+    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden"
+      style={{ background: "hsl(262,45%,3%)" }}>
+
+      {/* Nebula background glows */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[500px] rounded-full opacity-20"
-          style={{ background: "radial-gradient(circle, hsl(0,85%,50%) 0%, transparent 70%)", filter: "blur(80px)" }} />
-        <div className="absolute bottom-1/4 left-1/4 w-[400px] h-[400px] rounded-full opacity-15"
-          style={{ background: "radial-gradient(circle, hsl(215,85%,55%) 0%, transparent 70%)", filter: "blur(80px)" }} />
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(139,92,246,0.18) 0%, transparent 70%)", filter: "blur(60px)" }} />
+        <div className="absolute bottom-1/4 left-1/4 w-[400px] h-[400px] rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%)", filter: "blur(60px)" }} />
+        <div className="absolute top-1/3 right-1/4 w-[300px] h-[300px] rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(236,72,153,0.08) 0%, transparent 70%)", filter: "blur(50px)" }} />
+        {/* Stars */}
+        {[...Array(20)].map((_, i) => (
+          <div key={i} className="absolute rounded-full animate-twinkle"
+            style={{
+              width: `${Math.random() * 2 + 1}px`, height: `${Math.random() * 2 + 1}px`,
+              background: "white", opacity: Math.random() * 0.5 + 0.2,
+              top: `${Math.random() * 100}%`, left: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 4}s`,
+            }} />
+        ))}
       </div>
 
       <div className="relative z-10 w-full max-w-sm px-6">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 mx-auto"
-            style={{ background: "linear-gradient(135deg, rgba(220,38,38,0.15) 0%, rgba(59,130,246,0.12) 100%)", border: "1px solid rgba(220,38,38,0.3)", boxShadow: "0 0 24px rgba(220,38,38,0.2)" }}>
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
-              <path d="M12 2L15 9H22L16.5 13.5L18.5 21L12 16.5L5.5 21L7.5 13.5L2 9H9L12 2Z"
-                style={{ fill: "hsl(0,85%,55%)" }} />
-            </svg>
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-5 mx-auto relative"
+            style={{
+              background: "linear-gradient(135deg, rgba(139,92,246,0.18) 0%, rgba(59,130,246,0.14) 100%)",
+              border: "1px solid rgba(139,92,246,0.35)",
+              boxShadow: "0 0 30px rgba(139,92,246,0.25), inset 0 0 20px rgba(139,92,246,0.05)",
+            }}>
+            <GalaxyLogo />
           </div>
-          <h1 className="text-2xl font-black tracking-tight">
-            LUFFY XO<span className="text-primary">.SHOP</span>
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">Enter your credentials to continue</p>
+          <h1 className="text-3xl font-black tracking-tight text-galaxy">COZY XO</h1>
+          <div className="text-sm font-bold mt-0.5" style={{ color: "hsl(271,60%,70%)" }}>.SHOP</div>
+          <p className="text-sm text-muted-foreground mt-3">Enter the galaxy — sign in to continue</p>
         </div>
 
-        {/* Form card */}
+        {/* Card */}
         <div className="rounded-2xl p-6"
-          style={{ background: "hsl(220,16%,7%)", border: "1px solid hsl(218,20%,13%)", boxShadow: "0 24px 64px rgba(0,0,0,0.6)" }}>
+          style={{
+            background: "hsl(262,38%,6%)",
+            border: "1px solid rgba(139,92,246,0.2)",
+            boxShadow: "0 24px 64px rgba(0,0,0,0.7), 0 0 40px rgba(139,92,246,0.06)",
+          }}>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Email</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={13} />
-                        <Input
-                          {...field}
-                          type="email"
-                          placeholder="your@email.com"
-                          className="pl-9 h-10 text-sm rounded-xl"
-                          style={{ background: "hsl(218,22%,11%)", borderColor: "hsl(218,22%,16%)" }}
-                          data-testid="input-email"
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Password</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={13} />
-                        <Input
-                          {...field}
-                          type="password"
-                          placeholder="••••••••"
-                          className="pl-9 h-10 text-sm rounded-xl"
-                          style={{ background: "hsl(218,22%,11%)", borderColor: "hsl(218,22%,16%)" }}
-                          data-testid="input-password"
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button
-                type="submit"
-                className="w-full h-11 font-black tracking-widest rounded-xl text-white shadow-lg transition-all"
-                style={{ background: "linear-gradient(135deg, hsl(0,85%,48%) 0%, hsl(0,85%,38%) 100%)", boxShadow: "0 0 20px rgba(220,38,38,0.35)" }}
-                disabled={loginMutation.isPending}
-                data-testid="button-login"
-              >
-                {loginMutation.isPending ? (
-                  <><Loader2 size={14} className="animate-spin mr-2" />Logging in...</>
-                ) : "LOGIN"}
+              <FormField control={form.control} name="email" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Email</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={13} />
+                      <Input {...field} type="email" placeholder="your@email.com"
+                        className="pl-9 h-11 text-sm rounded-xl"
+                        style={{ background: "rgba(139,92,246,0.06)", borderColor: "rgba(139,92,246,0.2)" }}
+                        data-testid="input-email" />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="password" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Password</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={13} />
+                      <Input {...field} type="password" placeholder="••••••••"
+                        className="pl-9 h-11 text-sm rounded-xl"
+                        style={{ background: "rgba(139,92,246,0.06)", borderColor: "rgba(139,92,246,0.2)" }}
+                        data-testid="input-password" />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <Button type="submit"
+                className="w-full h-11 font-black tracking-widest rounded-xl text-white shadow-lg mt-1"
+                style={{
+                  background: "linear-gradient(135deg, hsl(271,85%,58%) 0%, hsl(215,85%,52%) 100%)",
+                  boxShadow: "0 0 24px rgba(139,92,246,0.4)",
+                }}
+                disabled={loginMutation.isPending} data-testid="button-login">
+                {loginMutation.isPending
+                  ? <><Loader2 size={14} className="animate-spin mr-2" />Signing in...</>
+                  : "SIGN IN"}
               </Button>
             </form>
           </Form>
@@ -142,14 +173,17 @@ export default function LoginPage() {
 
         <p className="text-center text-sm text-muted-foreground mt-5">
           No account?{" "}
-          <Link href="/register" className="font-bold transition-colors" style={{ color: "hsl(215,85%,62%)" }} data-testid="link-register">
+          <Link href="/register" className="font-bold transition-colors" style={{ color: "hsl(271,75%,72%)" }} data-testid="link-register">
             Register here
           </Link>
         </p>
 
         <div className="text-center mt-8">
-          <p className="text-xs text-muted-foreground/35">
-            @web is designed by t.me/cozybalenciaga &nbsp;|&nbsp; @cozy x luffy web generator
+          <p className="text-xs" style={{ color: "hsl(265,15%,35%)" }}>
+            Designed &amp; developed by{" "}
+            <a href="https://t.me/cozybalenciaga" target="_blank" rel="noopener noreferrer" className="hover:text-violet-400 transition-colors">
+              @cozybalenciaga
+            </a>
           </p>
         </div>
       </div>
