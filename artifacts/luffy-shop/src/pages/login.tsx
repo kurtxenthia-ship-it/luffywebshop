@@ -11,28 +11,28 @@ import { useToast } from "@/hooks/use-toast";
 import { playLoginSound } from "@/lib/sound";
 import { Loader2, Lock, Mail } from "lucide-react";
 
-function GalaxyLogo() {
+function ShopLogo() {
   return (
     <svg width="36" height="36" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <radialGradient id="login-core" cx="50%" cy="50%" r="50%">
+        <radialGradient id="lg-core" cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="white" stopOpacity="1"/>
           <stop offset="60%" stopColor="hsl(271,85%,78%)" stopOpacity="0.9"/>
           <stop offset="100%" stopColor="hsl(215,85%,65%)" stopOpacity="0.5"/>
         </radialGradient>
-        <linearGradient id="login-arm" x1="0%" y1="0%" x2="100%" y2="100%">
+        <linearGradient id="lg-arm" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="hsl(271,85%,70%)" stopOpacity="0.9"/>
           <stop offset="50%" stopColor="hsl(215,85%,65%)" stopOpacity="0.7"/>
           <stop offset="100%" stopColor="hsl(315,75%,65%)" stopOpacity="0.4"/>
         </linearGradient>
-        <filter id="login-glow">
+        <filter id="lg-glow">
           <feGaussianBlur stdDeviation="1.5" result="blur"/>
           <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
         </filter>
       </defs>
-      <path d="M16 16 Q26 6 27 16 Q26 26 16 27 Q6 26 5 16 Q6 6 16 5" stroke="url(#login-arm)" strokeWidth="1.8" fill="none" strokeLinecap="round" opacity="0.75"/>
-      <path d="M16 16 Q21 11 22 16 Q21 21 16 22 Q11 21 10 16 Q11 11 16 10" stroke="url(#login-arm)" strokeWidth="1.1" fill="none" strokeLinecap="round" opacity="0.55"/>
-      <circle cx="16" cy="16" r="4.5" fill="url(#login-core)" filter="url(#login-glow)" opacity="0.9"/>
+      <path d="M16 16 Q26 6 27 16 Q26 26 16 27 Q6 26 5 16 Q6 6 16 5" stroke="url(#lg-arm)" strokeWidth="1.8" fill="none" strokeLinecap="round" opacity="0.75"/>
+      <path d="M16 16 Q21 11 22 16 Q21 21 16 22 Q11 21 10 16 Q11 11 16 10" stroke="url(#lg-arm)" strokeWidth="1.1" fill="none" strokeLinecap="round" opacity="0.55"/>
+      <circle cx="16" cy="16" r="4.5" fill="url(#lg-core)" filter="url(#lg-glow)" opacity="0.9"/>
       <circle cx="16" cy="16" r="2" fill="white" opacity="0.95"/>
       <circle cx="4" cy="5" r="1.1" fill="white" opacity="0.9"/>
       <circle cx="28" cy="4" r="0.8" fill="hsl(271,85%,85%)" opacity="0.8"/>
@@ -81,7 +81,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden"
       style={{ background: "hsl(262,45%,3%)" }}>
 
-      {/* Nebula background glows */}
+      {/* Background glows */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full"
           style={{ background: "radial-gradient(circle, rgba(139,92,246,0.18) 0%, transparent 70%)", filter: "blur(60px)" }} />
@@ -89,7 +89,6 @@ export default function LoginPage() {
           style={{ background: "radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%)", filter: "blur(60px)" }} />
         <div className="absolute top-1/3 right-1/4 w-[300px] h-[300px] rounded-full"
           style={{ background: "radial-gradient(circle, rgba(236,72,153,0.08) 0%, transparent 70%)", filter: "blur(50px)" }} />
-        {/* Stars */}
         {[...Array(20)].map((_, i) => (
           <div key={i} className="absolute rounded-full animate-twinkle"
             style={{
@@ -102,7 +101,6 @@ export default function LoginPage() {
       </div>
 
       <div className="relative z-10 w-full max-w-sm px-6">
-        {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-5 mx-auto relative"
             style={{
@@ -110,14 +108,16 @@ export default function LoginPage() {
               border: "1px solid rgba(139,92,246,0.35)",
               boxShadow: "0 0 30px rgba(139,92,246,0.25), inset 0 0 20px rgba(139,92,246,0.05)",
             }}>
-            <GalaxyLogo />
+            <ShopLogo />
           </div>
-          <h1 className="text-3xl font-black tracking-tight text-galaxy">COZY XO</h1>
+          <h1 className="text-3xl font-black tracking-tight"
+            style={{ background: "linear-gradient(135deg, hsl(271,85%,72%) 0%, hsl(215,85%,65%) 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+            COZY XO
+          </h1>
           <div className="text-sm font-bold mt-0.5" style={{ color: "hsl(271,60%,70%)" }}>.SHOP</div>
-          <p className="text-sm text-muted-foreground mt-3">Enter the galaxy — sign in to continue</p>
+          <p className="text-sm text-muted-foreground mt-3">Sign in to your account to continue</p>
         </div>
 
-        {/* Card */}
         <div className="rounded-2xl p-6"
           style={{
             background: "hsl(262,38%,6%)",
@@ -180,7 +180,7 @@ export default function LoginPage() {
 
         <div className="text-center mt-8">
           <p className="text-xs" style={{ color: "hsl(265,15%,35%)" }}>
-            Designed &amp; developed by{" "}
+            Developed by{" "}
             <a href="https://t.me/cozybalenciaga" target="_blank" rel="noopener noreferrer" className="hover:text-violet-400 transition-colors">
               @cozybalenciaga
             </a>
