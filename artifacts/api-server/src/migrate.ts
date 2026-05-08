@@ -88,6 +88,18 @@ export async function runMigrations() {
         user_id INTEGER NOT NULL REFERENCES users(id),
         login_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
+
+      CREATE TABLE IF NOT EXISTS checker_jobs (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id),
+        filename TEXT NOT NULL DEFAULT 'upload.txt',
+        file_content TEXT NOT NULL DEFAULT '',
+        total_lines INTEGER NOT NULL,
+        coins_spent INTEGER NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending',
+        results JSONB,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
     `);
 
     await client.query(`
